@@ -1,3 +1,4 @@
+import { supabase } from "../lib/supabaseClient"
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
@@ -15,15 +16,28 @@ const AddVendorPage = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      setForm({ name: '', phone: '', email: '', gstin: '', address: '', city: '' });
-    }, 3000);
-  };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validate()) return;
+
+  const { data, error } = await supabase
+    .from('vendors')
+    .insert([form]);
+
+  if (error) {
+    console.error(error);
+    alert("Error adding vendor");
+    return;
+  }
+
+  setSuccess(true);
+
+  setTimeout(() => {
+    setSuccess(false);
+    setForm({ name: '', phone: '', email: '', gstin: '', address: '', city: '' });
+  }, 3000);
+};
 
   const inputClass = "w-full bg-secondary/50 border border-border rounded-md px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold/50 focus:ring-4 focus:ring-gold/10 outline-none transition-all";
 

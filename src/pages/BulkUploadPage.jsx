@@ -1,3 +1,5 @@
+import Papa from 'papaparse';
+import { supabase } from "../lib/supabaseClient"
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, CheckCircle, XCircle, FileText } from 'lucide-react';
@@ -8,21 +10,49 @@ const BulkUploadPage = () => {
   const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState(0);
 
-  const handleFile = (f) => {
-    setFile(f);
-    setStatus('uploading');
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setStatus('success');
-          return 100;
-        }
-        return p + 10;
-      });
-    }, 200);
-  };
+  const handleFile = async (f) => {
+  setFile(f);
+  setStatus('uploading');
+  setProgress(10);
+
+  Papa.parse(f, {
+    header: true,
+    skipEmptyLines: true,
+    complete: async (results) => {
+      try {
+        setProgress(50);
+
+        const vendors = results.data.map((row) => ({
+          name: row.name,
+          phone: row.phone,
+          email: row.email,
+          gstin: row.gstin,
+          address: row.address,
+          city: row.city,
+        }));
+
+        const { error } = await supabase
+  .from('vendors')
+  .insert(vendors);
+
+if (error) {
+  console.error(error);
+  setStatus('error');
+  return;
+}
+
+// ✅ ADD HERE
+alert(`${vendors.length} vendors uploaded`);
+
+setProgress(100);
+setStatus('success');
+      } catch (err) {
+        console.error(err);
+        setStatus('error');
+      }
+    },
+  });
+};
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
