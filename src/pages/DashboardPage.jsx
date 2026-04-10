@@ -15,8 +15,11 @@ const StatusBadge = ({ status }) => (
 
 const VendorTable = () => {
   const [vendors, setVendors] = useState([]);
+  const { user } = useAuth(); // ✅ ADD THIS
 
   useEffect(() => {
+    if (!user) return; // ✅ WAIT until user exists
+
     fetchVendors();
 
     // 🔥 realtime updates
@@ -30,7 +33,7 @@ const VendorTable = () => {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [user]); // ✅ ADD user dependency
 
   const fetchVendors = async () => {
     const { data, error } = await supabase
@@ -89,9 +92,13 @@ const AdminDashboard = () => {
   const [workerCount, setWorkerCount] = useState(0);
   const [vendorCount, setVendorCount] = useState(0);
 
-  useEffect(() => {
+  const { user } = useAuth();
+
+useEffect(() => {
+  if (user) {
     fetchCounts();
-  }, []);
+  }
+}, [user]);
 
   const fetchCounts = async () => {
     const { count: workers } = await supabase
@@ -136,9 +143,13 @@ const AdminDashboard = () => {
 const WorkerDashboard = () => {
   const [vendorCount, setVendorCount] = useState(0);
 
-  useEffect(() => {
+  const { user } = useAuth();
+
+useEffect(() => {
+  if (user) {
     fetchVendorCount();
-  }, []);
+  }
+}, [user]);
 
   const fetchVendorCount = async () => {
     const { count } = await supabase
@@ -166,7 +177,9 @@ const WorkerDashboard = () => {
 };
 
 const DashboardPage = () => {
-  const { role } = useAuth();
+  const { role, loading } = useAuth();
+
+  if (loading) return <p>Loading...</p>; // ✅ ADD THIS
 
   return role === 'admin'
     ? <AdminDashboard />
